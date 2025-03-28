@@ -144,39 +144,3 @@ def search_corpus(query, corpus_text, match_whole_word=False):
         "regex": pattern,
         "matches": results
     }
-
-def main():
-    if len(sys.argv) > 1:
-        query = sys.argv[1]
-    else:
-        query = input("Unesi upit (npr. 'življen'): ")
-
-    match_whole = input("Želite li pretraživati samo cijele riječi? (da/ne): ").strip().lower() == "da"
-
-    pattern = generate_regex(query, match_whole_word=match_whole)
-    corpus_path = "corpus.txt"
-    try:
-        with open(corpus_path, "r", encoding="utf-8") as f:
-            corpus_text = f.read()
-    except FileNotFoundError:
-        print(f"Datoteka {corpus_path} nije pronađena.")
-        sys.exit(1)
-
-    word_spans = get_word_spans(corpus_text)
-    matching_tokens = get_matching_tokens(corpus_text, pattern)
-
-    with open("results.txt", "w", encoding="utf-8") as out:
-        out.write("Generirani regex:\n")
-        out.write(pattern + "\n\n")
-        if not matching_tokens:
-            out.write("Nema pronađenih instanci.\n")
-        else:
-            out.write("Rezultati (tri riječi lijevo i tri riječi desno):\n\n")
-            for token_span in matching_tokens:
-                kwic = get_kwic_line(corpus_text, token_span, word_spans, context_words=3, query=query)
-                out.write(kwic + "\n")
-
-    print("Rezultati su zapisani u 'results.txt'.")
-
-if __name__ == "__main__":
-    main()
