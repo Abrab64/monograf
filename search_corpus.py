@@ -142,7 +142,8 @@ def search_corpus(query, corpus_text, match_whole_word=False):
                for token_span in matching_tokens]
     return {
         "regex": pattern,
-        "matches": results
+        "matches": results,
+        "count": len(results)
     }
 
 # Streamlit app
@@ -167,7 +168,8 @@ def main():
             st.subheader("🎯 Generirani regex:")
             st.code(results['regex'], language="regex")
 
-            st.subheader(f"📄 Rezultati (KWIC): ukupno {len(results['matches'])}")
+            st.subheader("📄 Rezultati (KWIC):")
+            st.markdown(f"**Ukupno: {results['count']}**")
             if results['matches']:
                 for match in results['matches']:
                     st.markdown(f"- {match}")
