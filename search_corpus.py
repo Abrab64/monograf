@@ -69,14 +69,6 @@ def generate_regex(input_word):
                 regex_parts.append(("j", "(?:j)?"))
                 i += 1
                 continue
-            elif curr == "i" and nxt == "j":
-                regex_parts.append(("ij", "(?:ij|i|j)"))
-                i += 2
-                continue
-            elif curr == "j" and nxt == "i":
-                regex_parts.append(("ji", "(?:ji|j|i)"))
-                i += 2
-                continue
         matched = False
         for length in [4, 3, 2]:
             if i + length <= len(normalized):
@@ -122,9 +114,9 @@ def get_matching_tokens(corpus_text, pattern):
 def highlight_match(token, query):
     norm_token = normalize_vowels(token.lower())
     norm_query = normalize_vowels(query.lower())
-    start = norm_token.find(norm_query)
-    if start != -1:
-        end = start + len(norm_query)
+    match = re.search(norm_query, norm_token)
+    if match:
+        start, end = match.start(), match.end()
         return token[:start] + "**" + token[start:end] + "**" + token[end:]
     return token
 
@@ -136,7 +128,8 @@ def get_kwic_line(corpus_text, token_span, word_spans, context_words=3, query=""
     left_context = [word_spans[k][0] for k in range(max(0, idx - context_words), idx)]
     right_context = [word_spans[k][0] for k in range(idx + 1, min(len(word_spans), idx + 1 + context_words))]
     highlighted = highlight_match(token, query)
-    return f"{' '.join(left_context):>40}\n{highlighted:^40}\n{' '.join(right_context):<40}"
+    kwic_line = f"{' '.join(left_context):>30} {highlighted:^30} {' '.join(right_context):<30}"
+    return kwic_line
 
 def search_corpus(query, corpus_text):
     pattern = generate_regex(query)
