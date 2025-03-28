@@ -128,8 +128,7 @@ def get_kwic_line(corpus_text, token_span, word_spans, context_words=3, query=""
     left_context = [word_spans[k][0] for k in range(max(0, idx - context_words), idx)]
     right_context = [word_spans[k][0] for k in range(idx + 1, min(len(word_spans), idx + 1 + context_words))]
     highlighted = highlight_match(token, query)
-    kwic_line = f"{' '.join(left_context):>30} {highlighted:^30} {' '.join(right_context):<30}"
-    return kwic_line
+    return f"{' '.join(left_context)} {highlighted} {' '.join(right_context)}"
 
 def search_corpus(query, corpus_text):
     pattern = generate_regex(query)
