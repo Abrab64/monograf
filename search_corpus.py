@@ -112,13 +112,7 @@ def get_matching_tokens(corpus_text, pattern):
     return matching
 
 def highlight_match(token, query):
-    norm_token = normalize_vowels(token.lower())
-    norm_query = normalize_vowels(query.lower())
-    match = re.search(norm_query, norm_token)
-    if match:
-        start, end = match.start(), match.end()
-        return token[:start] + "**" + token[start:end] + "**" + token[end:]
-    return token
+    return f"**{token}**"
 
 def get_kwic_line(corpus_text, token_span, word_spans, context_words=3, query=""):
     token, start, end = token_span
