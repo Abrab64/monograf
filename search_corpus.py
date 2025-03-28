@@ -64,6 +64,23 @@ def generate_regex(input_word):
     regex_parts = []
     i = 0
     while i < len(normalized):
+        # Posebno pravilo za intervokalno j i varijacije ij/ji
+        if i >= 1 and i+1 < len(normalized):
+            prev = normalized[i-1]
+            curr = normalized[i]
+            nxt = normalized[i+1]
+            if prev in "aeiou" and curr == "j" and nxt in "aeiou":
+                regex_parts.append(("j", "(?:j)?"))
+                i += 1
+                continue
+            elif prev in "aeiou" and curr == "i" and nxt == "j":
+                regex_parts.append(("ij", "(?:ij|i|j)"))
+                i += 2
+                continue
+            elif prev in "aeiou" and curr == "j" and nxt == "i":
+                regex_parts.append(("ji", "(?:ji|j|i)"))
+                i += 2
+                continue
         matched = False
         for length in [4, 3, 2]:
             if i + length <= len(normalized):
@@ -90,18 +107,7 @@ def generate_regex(input_word):
             i += 1
 
     regex = ""
-    for idx, (chunk, group) in enumerate(regex_parts):
-        if idx > 0:
-            prev = regex_parts[idx - 1][0][-1]
-            curr = chunk[0]
-            if prev in "aeiou" and curr in "aeiou":
-                regex += "(?:j)?"
-            elif (prev == "i" and curr == "j") or (prev == "j" and curr == "i"):
-                regex = regex[:-len(regex_parts[idx - 1][1])]  # Remove previous
-                last_group = regex_parts[idx - 1][1]
-                new_group = "(?:" + last_group + "|j)"
-                regex += new_group
-                continue
+    for chunk, group in regex_parts:
         regex += group
 
     return "(?i).*" + regex + ".*"
@@ -121,12 +127,13 @@ def get_matching_tokens(corpus_text, pattern):
     return matching
 
 def highlight_match(token, query):
-    normalized_token = normalize_vowels(token.lower())
-    normalized_query = normalize_vowels(query.lower())
-    index = normalized_token.find(normalized_query)
-    if index == -1:
-        return token
-    return token[:index] + "**" + token[index:index+len(query)] + "**" + token[index+len(query):]
+    norm_token = normalize_vowels(token.lower())
+    norm_query = normalize_vowels(query.lower())
+    start = norm_token.find(norm_query)
+    if start != -1:
+        end = start + len(norm_query)
+        return token[:start] + "**" + token[start:end] + "**" + token[end:]
+    return "**" + token + "**"  # fallback
 
 def get_kwic_line(corpus_text, token_span, word_spans, context_words=3, query=""):
     token, start, end = token_span
