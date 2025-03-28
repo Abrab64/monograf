@@ -1,6 +1,7 @@
 import re
 import sys
 import unicodedata
+import streamlit as st
 
 # Funkcija koja "normalizira" samo vokale (a, e, i, o, u) – uklanja dijakritike samo kod njih
 def normalize_vowels(text):
@@ -100,13 +101,12 @@ def generate_regex(input_word, match_whole_word=False):
 
     regex = "".join(group for _, group in regex_parts)
     if match_whole_word:
-        return f"(?i)\b{regex}\b"
+        return f"(?i)\\b{regex}\\b"
     else:
         return f"(?i).*({regex}).*"
 
 def get_word_spans(text):
     words = []
-    start = 0
     for match in re.finditer(r'\S+', text):
         word = match.group()
         words.append((word, match.start(), match.end()))
