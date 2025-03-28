@@ -69,11 +69,11 @@ def generate_regex(input_word):
                 regex_parts.append(("j", "(?:j)?"))
                 i += 1
                 continue
-            elif prev in "aeiou" and curr == "i" and nxt == "j":
+            elif curr == "i" and nxt == "j":
                 regex_parts.append(("ij", "(?:ij|i|j)"))
                 i += 2
                 continue
-            elif prev in "aeiou" and curr == "j" and nxt == "i":
+            elif curr == "j" and nxt == "i":
                 regex_parts.append(("ji", "(?:ji|j|i)"))
                 i += 2
                 continue
@@ -136,7 +136,7 @@ def get_kwic_line(corpus_text, token_span, word_spans, context_words=3, query=""
     left_context = [word_spans[k][0] for k in range(max(0, idx - context_words), idx)]
     right_context = [word_spans[k][0] for k in range(idx + 1, min(len(word_spans), idx + 1 + context_words))]
     highlighted = highlight_match(token, query)
-    return f"{' '.join(left_context):>40}  {highlighted:^20}  {' '.join(right_context):<40}".strip()
+    return f"{' '.join(left_context):>40}\n{highlighted:^40}\n{' '.join(right_context):<40}"
 
 def search_corpus(query, corpus_text):
     pattern = generate_regex(query)
