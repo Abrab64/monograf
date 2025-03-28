@@ -91,12 +91,18 @@ def generate_regex(input_word):
 
     regex = ""
     for idx, (chunk, group) in enumerate(regex_parts):
-        regex += group
-        if idx < len(regex_parts) - 1:
-            cur = chunk[-1]
-            nxt = regex_parts[idx + 1][0][0]
-            if cur in "aeiou" and nxt in "aeiou":
+        if idx > 0:
+            prev = regex_parts[idx - 1][0][-1]
+            curr = chunk[0]
+            if prev in "aeiou" and curr in "aeiou":
                 regex += "(?:j)?"
+            elif (prev == "i" and curr == "j") or (prev == "j" and curr == "i"):
+                regex = regex[:-len(regex_parts[idx - 1][1])]  # Remove previous
+                last_group = regex_parts[idx - 1][1]
+                new_group = "(?:" + last_group + "|j)"
+                regex += new_group
+                continue
+        regex += group
 
     return "(?i).*" + regex + ".*"
 
