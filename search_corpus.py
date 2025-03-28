@@ -61,7 +61,7 @@ graphematic_map = {
 
 def generate_regex(input_word):
     normalized = normalize_vowels(input_word.lower())
-    regex = ""
+    regex_parts = []
     i = 0
     while i < len(normalized):
         matched = False
@@ -73,7 +73,7 @@ def generate_regex(input_word):
                     group = "(?:" + "|".join(re.escape(v) for v in variants) + ")"
                     if chunk.isalpha():
                         group += "+"
-                    regex += group
+                    regex_parts.append((chunk, group))
                     i += length
                     matched = True
                     break
@@ -86,13 +86,17 @@ def generate_regex(input_word):
             group = "(?:" + "|".join(re.escape(v) for v in variants) + ")"
             if char.isalpha():
                 group += "+"
-            regex += group
+            regex_parts.append((char, group))
             i += 1
-        if i > 0 and i < len(normalized):
-            prev = normalized[i-1]
-            next_ = normalized[i]
-            if prev in "aeiou" and next_ in "aeiou":
-                regex = regex[:-len(group)] + f"(?:{group}|j?{group[:-1]})"
+
+    regex = ""
+    for idx, (chunk, group) in enumerate(regex_parts):
+        regex += group
+        if idx < len(regex_parts) - 1:
+            cur = chunk[-1]
+            nxt = regex_parts[idx + 1][0][0]
+            if cur in "aeiou" and nxt in "aeiou":
+                regex += "(?:j)?"
 
     return "(?i).*" + regex + ".*"
 
