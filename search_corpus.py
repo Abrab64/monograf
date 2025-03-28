@@ -92,7 +92,7 @@ def generate_regex(input_word):
             prev = normalized[i-1]
             next_ = normalized[i]
             if prev in "aeiou" and next_ in "aeiou":
-                regex = regex[:-len(group)] + f"(?:{group}|j?{group})"
+                regex = regex[:-len(group)] + f"(?:{group}|j?{group[:-1]})"
 
     return "(?i).*" + regex + ".*"
 
