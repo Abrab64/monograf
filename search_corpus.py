@@ -92,7 +92,8 @@ def generate_regex(input_word):
             prev = normalized[i-1]
             next_ = normalized[i]
             if prev in "aeiou" and next_ in "aeiou":
-                regex += "(?:j)?"
+                regex = regex[:-len(group)] + f"(?:{group}|j?{group})"
+
     return "(?i).*" + regex + ".*"
 
 word_pattern = re.compile(r'\b[\w’\+\u0100-\u017F]+\b', flags=re.UNICODE)
