@@ -56,7 +56,7 @@ graphematic_map = {
     "ž": ["ž", "ž", "ſz", "ſſ", "zs", "zh", "x"]
 }
 
-def generate_regex(input_word):
+def generate_regex(input_word, match_whole_word=False):
     normalized = normalize_vowels(input_word.lower())
     regex_parts = []
     i = 0
@@ -99,7 +99,10 @@ def generate_regex(input_word):
             i += 1
 
     regex = "".join(group for _, group in regex_parts)
-    return f"(?i).*({regex}).*"
+    if match_whole_word:
+        return f"(?i)\b{regex}\b"
+    else:
+        return f"(?i).*({regex}).*"
 
 def get_word_spans(text):
     words = []
@@ -131,8 +134,8 @@ def get_kwic_line(corpus_text, token_span, word_spans, context_words=3, query=""
     highlighted = highlight_match(token, query)
     return f"{' '.join(left_context)} {highlighted} {' '.join(right_context)}"
 
-def search_corpus(query, corpus_text):
-    pattern = generate_regex(query)
+def search_corpus(query, corpus_text, match_whole_word=False):
+    pattern = generate_regex(query, match_whole_word=match_whole_word)
     word_spans = get_word_spans(corpus_text)
     matching_tokens = get_matching_tokens(corpus_text, pattern)
     results = [get_kwic_line(corpus_text, token_span, word_spans, context_words=3, query=query)
@@ -148,7 +151,9 @@ def main():
     else:
         query = input("Unesi upit (npr. 'življen'): ")
 
-    pattern = generate_regex(query)
+    match_whole = input("Želite li pretraživati samo cijele riječi? (da/ne): ").strip().lower() == "da"
+
+    pattern = generate_regex(query, match_whole_word=match_whole)
     corpus_path = "corpus.txt"
     try:
         with open(corpus_path, "r", encoding="utf-8") as f:
