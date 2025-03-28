@@ -71,7 +71,7 @@ def generate_regex(input_word, match_whole_word=False):
                 i += 1
                 continue
             if prev + curr == "ij" or curr + nxt == "ji":
-                regex_parts.append(("j", "(?:j|i)?"))
+                regex_parts.append(("j", "(?:ij|ji|i|j)"))
                 i += 1
                 continue
         matched = False
@@ -144,3 +144,38 @@ def search_corpus(query, corpus_text, match_whole_word=False):
         "regex": pattern,
         "matches": results
     }
+
+# Streamlit app
+def main():
+    st.set_page_config(page_title="Graphematic Corpus Search", layout="wide")
+    st.title("📚 Grafematička korpusna pretraga")
+
+    st.markdown("""
+    Unesi riječ ili dio riječi standardnim pravopisom (npr. **življenje**, **kršćanin**) kako bi pretražio/la sve moguće grafematske varijante u korpusu.
+    """)
+
+    query = st.text_input("🔍 Upit:", "")
+    match_whole_word = st.checkbox("🔒 Pretraži samo cijele riječi")
+
+    if st.button("Pretraži") and query:
+        try:
+            with open("corpus.txt", "r", encoding="utf-8") as f:
+                corpus = f.read()
+
+            results = search_corpus(query, corpus, match_whole_word=match_whole_word)
+
+            st.subheader("🎯 Generirani regex:")
+            st.code(results['regex'], language="regex")
+
+            st.subheader(f"📄 Rezultati (KWIC): ukupno {len(results['matches'])}")
+            if results['matches']:
+                for match in results['matches']:
+                    st.markdown(f"- {match}")
+            else:
+                st.info("Nema rezultata za zadani upit.")
+
+        except Exception as e:
+            st.error(f"Došlo je do pogreške: {e}")
+
+if __name__ == "__main__":
+    main()
