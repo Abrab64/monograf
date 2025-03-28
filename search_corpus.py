@@ -65,8 +65,12 @@ def generate_regex(input_word):
             prev = normalized[i-1]
             curr = normalized[i]
             nxt = normalized[i+1]
-            if prev in "aeiou" and curr == "j" and nxt in "aeiou":
+            if curr == "j" and prev in "aeiou" and nxt in "aeiou":
                 regex_parts.append(("j", "(?:j)?"))
+                i += 1
+                continue
+            if prev + curr == "ij" or curr + nxt == "ji":
+                regex_parts.append(("j", "(?:j|i)?"))
                 i += 1
                 continue
         matched = False
@@ -97,10 +101,13 @@ def generate_regex(input_word):
     regex = "".join(group for _, group in regex_parts)
     return f"(?i).*({regex}).*"
 
-word_pattern = re.compile(r'\b[\w’\+\u0100-\u017F]+\b', flags=re.UNICODE)
-
 def get_word_spans(text):
-    return [(m.group(), m.start(), m.end()) for m in word_pattern.finditer(text)]
+    words = []
+    start = 0
+    for match in re.finditer(r'\S+', text):
+        word = match.group()
+        words.append((word, match.start(), match.end()))
+    return words
 
 def get_matching_tokens(corpus_text, pattern):
     tokens = get_word_spans(corpus_text)
