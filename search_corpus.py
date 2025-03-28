@@ -15,18 +15,15 @@ def normalize_vowels(text):
             result += char
     return result
 
-# Funkcija koja uklanja sve dijakritike – koristimo je samo za kompletan upit ako je potrebno
 def strip_accents(text):
     return ''.join(c for c in unicodedata.normalize('NFD', text)
                    if not unicodedata.combining(c))
 
-# Funkcija koja provjerava je li token sastavljen isključivo od suglasnika
 def is_pure_consonant(token):
     vowels = set("aeiou")
     token_lower = token.lower()
     return all(ch.isalpha() and ch not in vowels for ch in token_lower)
 
-# Mapping pravila – definirano prema pravilima iz članka
 graphematic_map = {
     "a": ["a"],
     "b": ["b"],
@@ -64,7 +61,6 @@ def generate_regex(input_word):
     regex_parts = []
     i = 0
     while i < len(normalized):
-        # Posebno pravilo za intervokalno j i varijacije ij/ji
         if i >= 1 and i+1 < len(normalized):
             prev = normalized[i-1]
             curr = normalized[i]
@@ -106,11 +102,8 @@ def generate_regex(input_word):
             regex_parts.append((char, group))
             i += 1
 
-    regex = ""
-    for chunk, group in regex_parts:
-        regex += group
-
-    return "(?i).*" + regex + ".*"
+    regex = "".join(group for _, group in regex_parts)
+    return f"(?i).*({regex}).*"
 
 word_pattern = re.compile(r'\b[\w’\+\u0100-\u017F]+\b', flags=re.UNICODE)
 
@@ -133,21 +126,17 @@ def highlight_match(token, query):
     if start != -1:
         end = start + len(norm_query)
         return token[:start] + "**" + token[start:end] + "**" + token[end:]
-    return "**" + token + "**"  # fallback
+    return token
 
 def get_kwic_line(corpus_text, token_span, word_spans, context_words=3, query=""):
     token, start, end = token_span
-    idx = None
-    for j, (t, s, e) in enumerate(word_spans):
-        if s == start and e == end:
-            idx = j
-            break
+    idx = next((j for j, (t, s, e) in enumerate(word_spans) if s == start and e == end), None)
     if idx is None:
         return token
-    left_context = " ".join(word_spans[k][0] for k in range(max(0, idx-context_words), idx))
-    right_context = " ".join(word_spans[k][0] for k in range(idx+1, min(len(word_spans), idx+1+context_words)))
+    left_context = [word_spans[k][0] for k in range(max(0, idx - context_words), idx)]
+    right_context = [word_spans[k][0] for k in range(idx + 1, min(len(word_spans), idx + 1 + context_words))]
     highlighted = highlight_match(token, query)
-    return f"{left_context:<40} {highlighted} {right_context}".strip()
+    return f"{' '.join(left_context):>40}  {highlighted:^20}  {' '.join(right_context):<40}".strip()
 
 def search_corpus(query, corpus_text):
     pattern = generate_regex(query)
@@ -167,7 +156,6 @@ def main():
         query = input("Unesi upit (npr. 'življen'): ")
 
     pattern = generate_regex(query)
-
     corpus_path = "corpus.txt"
     try:
         with open(corpus_path, "r", encoding="utf-8") as f:
