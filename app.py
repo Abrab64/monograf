@@ -1,11 +1,11 @@
 import streamlit as st
 from search_corpus import search_corpus
 
-st.set_page_config(page_title="Grafematička korpusna pretraga", layout="wide")
+st.set_page_config(page_title="Graphematičko korpusno pretraživanje", layout="wide")
 st.title("📚 Graphematičko korpusno pretraživanje")
 
 st.markdown("""
-Unesi riječ ili dio riječi standardnim pravopisom (npr. **življenje**, **kršćanin**) kako bi pretražio/la sve moguće grafematičke varijante u korpusu.
+Unesi riječ standardnim pravopisom (npr. **življenje**, **kršćanin**) kako bi pretražio/la sve moguće grafematičke varijante u korpusu.
 """)
 
 query = st.text_input("🔍 Upit:", "")
@@ -16,8 +16,14 @@ if st.button("Pretraži") and query:
         with open("corpus.txt", "r", encoding="utf-8") as f:
             corpus = f.read()
 
-        # Dodajemo drugu liniju analize u rezultat
-        results = search_corpus(query, corpus, match_whole_word=match_whole, apply_post_filters=True)
+        # Pokrećemo pretragu s dodatnim pravilima za kv/ku i s drugom linijom analize
+        results = search_corpus(
+            query,
+            corpus,
+            match_whole_word=match_whole,
+            apply_post_filters=True,  # uklanjanje neželjenih rezultata
+            apply_qu_rule=True        # pravilo da se "q" koristi samo ako slijedi "u" ili "v"
+        )
 
         st.subheader("🎯 Generirani regex:")
         st.code(results['regex'], language="regex")
