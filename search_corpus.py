@@ -54,7 +54,7 @@ graphematic_map = {
     "u": ["u"],
     "v": ["v", "u"],
     "z": ["z"],
-    "ž": ["ž", "ž", "ſz", "ſſ", "zs", "zh", "x"]
+    "ž": ["ž", "ź", "ſz", "ſſ", "zs", "zh", "x"]
 }
 
 def generate_regex(input_word, match_whole_word=False):
@@ -108,13 +108,19 @@ def generate_regex(input_word, match_whole_word=False):
 
     regex = "".join(group for _, group in regex_parts)
     if match_whole_word:
-        return f"(?i)\\b{regex}\\b"
+        return f"(?i)^" + regex + "$"
     else:
         return f"(?i).*({regex}).*"
 
-def is_invalid_final_cluster(word):
+def is_invalid_final_cluster(word, query=None):
     lower = word.lower()
-    return lower.endswith("chi") or lower.endswith("gni") or lower.endswith("gli")
+    if lower.endswith("chi") and not (query and query.lower().endswith("ć")):
+        return True
+    if lower.endswith("gni") and not (query and query.lower().endswith("nj")):
+        return True
+    if lower.endswith("gli") and not (query and query.lower().endswith("lj")):
+        return True
+    return False
 
 def get_word_spans(text):
     words = []
@@ -123,12 +129,39 @@ def get_word_spans(text):
         words.append((word, match.start(), match.end()))
     return words
 
-def get_matching_tokens(corpus_text, pattern):
+def get_matching_tokens(corpus_text, pattern, query=None):
     tokens = get_word_spans(corpus_text)
     matching = []
     for token, start, end in tokens:
         norm_token = normalize_vowels(token.lower())
-        if re.search(pattern, norm_token):
-            if not is_invalid_final_cluster(token):
+        if re.fullmatch(pattern, norm_token) or re.search(pattern, norm_token):
+            if not is_invalid_final_cluster(token, query=query):
                 matching.append((token, start, end))
     return matching
+
+# NOVO: Funkcija za pokretanje pretrage u aplikaciji
+
+def search_corpus(query, corpus_text, match_whole_word=False):
+    pattern = generate_regex(query, match_whole_word=match_whole_word)
+    word_spans = get_word_spans(corpus_text)
+    matching_tokens = get_matching_tokens(corpus_text, pattern, query=query)
+    results = [get_kwic_line(corpus_text, token_span, word_spans, context_words=3)
+               for token_span in matching_tokens]
+    return {
+        "regex": pattern,
+        "matches": results
+    }
+
+def get_kwic_line(corpus_text, token_span, word_spans, context_words=3):
+    token, start, end = token_span
+    idx = None
+    for j, (t, s, e) in enumerate(word_spans):
+        if s == start and e == end:
+            idx = j
+            break
+    if idx is None:
+        return token
+    center = word_spans[idx][0]
+    left_context = " ".join(word_spans[k][0] for k in range(max(0, idx-context_words), idx))
+    right_context = " ".join(word_spans[k][0] for k in range(idx+1, min(len(word_spans), idx+1+context_words)))
+    return f"{left_context} **{center}** {right_context}".strip()
