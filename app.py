@@ -54,7 +54,7 @@ graphematic_map = {
     "u": ["u"],
     "v": ["v", "u"],
     "z": ["z"],
-    "ž": ["ž", "ž", "ſz", "ſſ", "zs", "zh", "x"]
+    "ž": ["ž", "ž", "ſz", "ſf", "zs", "zh", "x"]
 }
 
 def generate_regex(input_word, match_whole_word=False):
@@ -103,7 +103,7 @@ def generate_regex(input_word, match_whole_word=False):
     if match_whole_word:
         return f"(?i)\\b{regex}\\b"
     else:
-        return f"(?i).*({regex}).*"
+        return f"(?i).*(" + regex + ").*"
 
 def get_word_spans(text):
     words = []
@@ -142,16 +142,17 @@ def search_corpus(query, corpus_text, match_whole_word=False):
                for token_span in matching_tokens]
     return {
         "regex": pattern,
-        "matches": results
+        "matches": results,
+        "count": len(results)
     }
 
 # Streamlit app
 def main():
     st.set_page_config(page_title="Graphematic Corpus Search", layout="wide")
-    st.title("📚 Graphematičko korpusno pretraživanje")
+    st.title("📚 Grafematička korpusna pretraga")
 
     st.markdown("""
-    Unesi riječ standardnim pravopisom (npr. **življenje**, **kršćanin**) kako bi pretražio/la sve moguće grafematske varijante u korpusu.
+    Unesi riječ ili dio riječi standardnim pravopisom (npr. **življenje**, **kršćanin**) kako bi pretražio/la sve moguće grafematske varijante u korpusu.
     """)
 
     query = st.text_input("🔍 Upit:", "")
@@ -168,6 +169,8 @@ def main():
             st.code(results['regex'], language="regex")
 
             st.subheader("📄 Rezultati (KWIC):")
+            st.markdown(f"**Ukupno: {results['count']}**")
+
             if results['matches']:
                 for match in results['matches']:
                     st.markdown(f"- {match}")
