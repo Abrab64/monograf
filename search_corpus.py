@@ -39,7 +39,7 @@ graphematic_map = {
     "h": ["h"],
     "i": ["i"],
     "j": ["j"],
-    "k": ["k", "qu"],
+    "k": ["k"],
     "l": ["l"],
     "lj": ["gli", "gl", "l’j", "l’", "l+j", "li"],
     "m": ["m"],
@@ -74,6 +74,13 @@ def generate_regex(input_word, match_whole_word=False):
                 regex_parts.append(("j", "(?:ij|ji|i|j)"))
                 i += 1
                 continue
+
+        if normalized[i:i+2] in ("kv", "ku"):
+            group = "(?:k|q)+" + re.escape(normalized[i+1]) + "+"
+            regex_parts.append(("kv-ku", group))
+            i += 2
+            continue
+
         matched = False
         for length in [4, 3, 2]:
             if i + length <= len(normalized):
@@ -105,6 +112,10 @@ def generate_regex(input_word, match_whole_word=False):
     else:
         return f"(?i).*({regex}).*"
 
+def is_invalid_final_cluster(word):
+    lower = word.lower()
+    return lower.endswith("chi") or lower.endswith("gni") or lower.endswith("gli")
+
 def get_word_spans(text):
     words = []
     for match in re.finditer(r'\S+', text):
@@ -118,66 +129,6 @@ def get_matching_tokens(corpus_text, pattern):
     for token, start, end in tokens:
         norm_token = normalize_vowels(token.lower())
         if re.search(pattern, norm_token):
-            matching.append((token, start, end))
+            if not is_invalid_final_cluster(token):
+                matching.append((token, start, end))
     return matching
-
-def highlight_match(token, query):
-    return f"**{token}**"
-
-def get_kwic_line(corpus_text, token_span, word_spans, context_words=3, query=""):
-    token, start, end = token_span
-    idx = next((j for j, (t, s, e) in enumerate(word_spans) if s == start and e == end), None)
-    if idx is None:
-        return token
-    left_context = [word_spans[k][0] for k in range(max(0, idx - context_words), idx)]
-    right_context = [word_spans[k][0] for k in range(idx + 1, min(len(word_spans), idx + 1 + context_words))]
-    highlighted = highlight_match(token, query)
-    return f"{' '.join(left_context)} {highlighted} {' '.join(right_context)}"
-
-def search_corpus(query, corpus_text, match_whole_word=False):
-    pattern = generate_regex(query, match_whole_word=match_whole_word)
-    word_spans = get_word_spans(corpus_text)
-    matching_tokens = get_matching_tokens(corpus_text, pattern)
-    results = [get_kwic_line(corpus_text, token_span, word_spans, context_words=3, query=query)
-               for token_span in matching_tokens]
-    return {
-        "regex": pattern,
-        "matches": results,
-        "count": len(results)
-    }
-
-# Streamlit app
-def main():
-    st.set_page_config(page_title="Graphematic Corpus Search", layout="wide")
-    st.title("📚 Grafematička korpusna pretraga")
-
-    st.markdown("""
-    Unesi riječ ili dio riječi standardnim pravopisom (npr. **življenje**, **kršćanin**) kako bi pretražio/la sve moguće grafematske varijante u korpusu.
-    """)
-
-    query = st.text_input("🔍 Upit:", "")
-    match_whole_word = st.checkbox("🔒 Pretraži samo cijele riječi")
-
-    if st.button("Pretraži") and query:
-        try:
-            with open("corpus.txt", "r", encoding="utf-8") as f:
-                corpus = f.read()
-
-            results = search_corpus(query, corpus, match_whole_word=match_whole_word)
-
-            st.subheader("🎯 Generirani regex:")
-            st.code(results['regex'], language="regex")
-
-            st.subheader("📄 Rezultati (KWIC):")
-            st.markdown(f"**Ukupno: {results['count']}**")
-            if results['matches']:
-                for match in results['matches']:
-                    st.markdown(f"- {match}")
-            else:
-                st.info("Nema rezultata za zadani upit.")
-
-        except Exception as e:
-            st.error(f"Došlo je do pogreške: {e}")
-
-if __name__ == "__main__":
-    main()
